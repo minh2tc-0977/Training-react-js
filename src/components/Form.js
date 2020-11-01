@@ -1,110 +1,112 @@
-import React from "react";
+import React, { useState } from "react";
 import "./../css/style.css";
+import Input from './Input/index';
+import Textarea from './Textarea/index';
+import Select from './Select/index';
+import Checkbox from './CheckBox/index';
+import Radio from './Radio/index';
+import languages from './../config/languages.json';
+import gender from './../config/gender.json';
+import interest from './../config/interests.json';
+import { useHistory } from "react-router-dom";
 
-function Form(props) {
+function Form() {
+  const history = useHistory();
+  const {
+    location: { state }
+  } = history;
+
+  const initUser = (state && state.user) || {
+    fullName: '',
+    gender: '',
+    birthday: '',
+    self_intro: '',
+    interests: [],
+  };
+
+  const [user, setUser] = useState(initUser);
+
+  function handleChange(e) {
+    const {name, value, type, checked} = e.target;
+    let prevUser = user;
+    setUser({
+      ...prevUser,
+      [name]:
+        type === "checkbox"
+          ? checked
+            ? [...prevUser.interests, JSON.parse(value)]
+            : prevUser.interests.filter((interest) => {
+                return interest.id !== JSON.parse(value).id;
+              })
+          : value
+    });
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    history.push("/result", {user});
+  }
+
   return (
     <div className="container">
       <div className="card">
         <div className="card-header">User info</div>
         <div className="card-body">
-          <form onSubmit={props.handleSubmit}>
-            <div className="form-group row">
-              <label className="col-sm-4">Full name</label>
-              <input
-                onChange={props.handleChange}
-                type="text"
-                name="fullName"
-                className="form-control col-sm-8"
-              />
-            </div>
-            <div className="form-group row">
-              <label className="col-sm-4">Date of birth</label>
-              <input
-                onChange={props.handleChange}
-                type="date"
-                name="birtday"
-                className="form-control col-sm-8"
-              />
-            </div>
-            <div className="form-group row">
-              <label className="col-sm-4">Gender</label>
-              {
-                props.gender.map((gender) => {
-                  return (
-                    <div className="custom-control custom-radio col-sm-4" key={gender.id}>
-                      <input
-                        onChange={props.handleChange}
-                        value={gender.name}
-                        type="radio"
-                        name="gender"
-                        id={gender.name}
-                        className="custom-control-input"
-                      />
-                      <label className="custom-control-label" htmlFor={gender.name}>
-                        {gender.name}
-                      </label>
-                    </div>
-                  );
-                })
-              }
-            </div>
-            <div className="form-group row">
-              <label className="col-sm-4">Self intro</label>
-              <textarea
-                onChange={props.handleChange}
-                name="selfIntro"
-                className="form-control col-sm-8"
-                rows="6"
-              />
-            </div>
-            <div className="form-group row">
-              <label className="col-sm-4">Languages</label>
-              <select
-                onChange={props.handleChange}
-                className="custom-select col-sm-8"
-                name="language"
-              >
-                <option>Choose...</option>
-                {props.languages.map((language) => {
-                  return (
-                    <option
-                      key={language.id}
-                      value={language.name}
-                    >
-                      {language.name}
-                    </option>
-                  )
-                })}
-              </select>
-            </div>
-            <div className="form-group row">
-              <label className="col-sm-4">Interests</label>
-              <div clas="col-sm-8 row">
-                {props.interests.map((interest) => {
-                  return (
-                    <div
-                      className="custom-control custom-checkbox"
-                      key={interest.id}
-                    >
-                      <input
-                        onChange={props.handleChange}
-                        value={JSON.stringify(interest)}
-                        name="interests"
-                        type="checkbox"
-                        className="custom-control-input"
-                        id={interest.name}
-                      />
-                      <label
-                        className="custom-control-label"
-                        htmlFor={interest.name}
-                      >
-                        {interest.name}
-                      </label>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+          <form onSubmit={handleSubmit}>
+            <Input
+              labelClass="col-sm-4"
+              label="Full name"
+              handleChange={handleChange}
+              type="text"
+              name="fullName"
+              className="form-control col-sm-8"
+              value={user.fullName}
+            ></Input>
+            <Input
+              labelClass="col-sm-4"
+              label="Date of birth"
+              handleChange={handleChange}
+              type="date"
+              name="birthday"
+              className="form-control col-sm-8"
+              value={user.birthday}
+            ></Input>
+            <Radio
+              labelClass="col-sm-4"
+              label="Gender"
+              handleChange={handleChange}
+              name="gender"
+              inputClassName="custom-control-input"
+              className="custom-control custom-radio col-sm-4"
+              data={gender}
+            ></Radio>
+            <Textarea
+              labelClass="col-sm-4"
+              label="Self intro"
+              handleChange={handleChange}
+              name="selfIntro"
+              className="form-control col-sm-8"
+              rows="6"
+              value={user.selfIntro}
+            ></Textarea>
+            <Select
+              labelClass="col-sm-4"
+              label="Languages"
+              handleChange={handleChange}
+              name="language"
+              className="form-control col-sm-8"
+              data={languages}
+              value={user.language}
+            ></Select>
+            <Checkbox
+              labelClass="col-sm-4"
+              label="Interests"
+              handleChange={handleChange}
+              name="interests"
+              inputClassName="custom-control-input"
+              className="custom-control custom-checkbox"
+              data={interest}
+            ></Checkbox>
             <button className="btn btn-primary btn-block" type="submit">Submit</button>
           </form>
         </div>
