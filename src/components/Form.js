@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import "./../css/style.css";
 import Input from './Input/index';
 import Textarea from './Textarea/index';
 import Select from './Select/index';
@@ -9,42 +8,52 @@ import languages from './../config/languages.json';
 import gender from './../config/gender.json';
 import interest from './../config/interests.json';
 import { useHistory } from "react-router-dom";
+import { createStore } from 'redux';
+import { mainReducer } from './../reducers/index';
+import { ON_CHANGE, ON_SUBMIT, onChange, onSubmit } from "./../actions/index";
 
 function Form() {
   const history = useHistory();
+
   const {
     location: { state }
   } = history;
 
-  const initUser = (state && state.user) || {
+  const initUser = {
     fullName: '',
     gender: '',
     birthday: '',
     self_intro: '',
     interests: [],
   };
+  const oldUser = (state && state.user) ? state.user : initUser;
+  const store = createStore(mainReducer, {user: initUser});
 
-  const [user, setUser] = useState(initUser);
+  const getUser = (state) => state.user;
+  const getIsSubmit = (state) => state.isSubmit;
 
   function handleChange(e) {
+    const prevUser = getUser(store.getState());
     const {name, value, type, checked} = e.target;
-    let prevUser = user;
-    setUser({
-      ...prevUser,
-      [name]:
-        type === "checkbox"
-          ? checked
-            ? [...prevUser.interests, JSON.parse(value)]
-            : prevUser.interests.filter((interest) => {
-                return interest.id !== JSON.parse(value).id;
-              })
-          : value
-    });
+    const valueCustom = type === "checkbox"
+      ? checked
+        ? [...prevUser.interests, JSON.parse(value)]
+        : prevUser.interests.filter((interest) => {
+            return interest.id !== JSON.parse(value).id;
+          })
+      : value;
+
+    store.dispatch(onChange({
+      [name]: valueCustom
+    }));
   }
 
   function handleSubmit(e) {
     e.preventDefault();
-    history.push("/result", {user});
+    store.dispatch(onSubmit({ isSubmit: true }));
+    if (getIsSubmit(store.getState())) {
+      history.push("/result", store.getState());
+    }
   }
 
   return (
@@ -60,7 +69,7 @@ function Form() {
               type="text"
               name="fullName"
               className="form-control col-sm-8"
-              value={user.fullName}
+              value={oldUser.fullname}
             ></Input>
             <Input
               labelClass="col-sm-4"
@@ -69,7 +78,7 @@ function Form() {
               type="date"
               name="birthday"
               className="form-control col-sm-8"
-              value={user.birthday}
+              value={oldUser.birthday}
             ></Input>
             <Radio
               labelClass="col-sm-4"
@@ -87,7 +96,7 @@ function Form() {
               name="selfIntro"
               className="form-control col-sm-8"
               rows="6"
-              value={user.selfIntro}
+              value={oldUser.selfIntro}
             ></Textarea>
             <Select
               labelClass="col-sm-4"
@@ -96,7 +105,7 @@ function Form() {
               name="language"
               className="form-control col-sm-8"
               data={languages}
-              value={user.language}
+              value={oldUser.language}
             ></Select>
             <Checkbox
               labelClass="col-sm-4"
@@ -106,6 +115,7 @@ function Form() {
               inputClassName="custom-control-input"
               className="custom-control custom-checkbox"
               data={interest}
+              value={oldUser.interests}
             ></Checkbox>
             <button className="btn btn-primary btn-block" type="submit">Submit</button>
           </form>
